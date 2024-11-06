@@ -84,6 +84,7 @@ str(metadata)
 Forzamos los metadatos a ser reconocidos como tal:
 
 ```{r}
+library(S4Vectors)
 colData <- DataFrame(Subjects = metadata$SUBJECTS,
                      Surgery = metadata$SURGERY,
                      Age = metadata$AGE, 
@@ -121,6 +122,12 @@ Creamos el objeto SummarizedExperiment. Para ello, usaremos data_values como dat
 
 ```{r}
 summarized_experiment <- SummarizedExperiment(assays = list(counts = assay_data), colData = colData)
+```
+
+Guardamos el objeto summarized_experiment como archivo .RDA:
+
+```{r}
+save(summarized_experiment, file = "summarized_experiment.RDA")
 ```
 
 ```{r}
