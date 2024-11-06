@@ -2,8 +2,13 @@
 title: "PAC1"
 author: "Silvia Arroitajauregui Avilés"
 date: "2024-11-05"
-output: html_document
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
 ---
+
+# Tabla de contenidos.
 
 # Abstract.
 
@@ -47,35 +52,17 @@ Finalmente, para poder cargar todos nuestros documentos, será necesario utiliza
 
 ### Creación del proyecto en R y del repositorio en GitHub.
 
-En primer lugar, crearemos el repositorio en GitHub. Para ello, con la sesión iniciada, nos dirigiremos a *Repositories / New*:
+En primer lugar, crearemos el repositorio en GitHub. Para ello, con la sesión iniciada, nos dirigiremos a *Repositories / New*.
 
-![](images/clipboard-3636223962.png)
+En la página de creación del Repositorio, tendremos que indicar el nombre, una breve descripción y, en esta ocasión, lo haremos de dominio público. Tras ello, clicaremos en *Create repository.*
 
-En la página de creación del Repositorio, tendremos que indicar el nombre, una breve descripción y, en esta ocasión, lo haremos de dominio público. Tras ello, clicaremos en *Create repository:*
+Esto nos creará el repositorio, el enlace del cual deberemos copiar en RStudio.
 
-![](images/clipboard-3557996507.png)
+En RStudio, nos dirigimos a *File / New Project / Version Control / Git*. En la pantalla final, deberemos copiar la URL del repositorio creado, así como indicar la dirección local del proyecto en nuestro ordenador.
 
-![](images/clipboard-2127165342.png)
+Finalmente, para sincronizar RStudio con GitHub, deberemos ir haciendo *Commit* en las actualizaciones que generemos.
 
-Esto nos creará el repositorio, el enlace del cual deberemos copiar en RStudio:
-
-![](images/clipboard-3940631010.png)
-
-En RStudio, nos dirigimos a *File / New Project / Version Control / Git*. En la pantalla final, deberemos copiar la URL del repositorio creado, así como indicar la dirección local del proyecto en nuestro ordenador:
-
-![](images/clipboard-4094692892.png)
-
-Finalmente, para sincronizar RStudio con GitHub, deberemos ir haciendo *Commit* en las actualizaciones que generemos:
-
-![](images/clipboard-30791053.png)
-
-![](images/clipboard-2508258357.png)
-
-Y con un simple click en *Push* estos quedarán actualizados en GitHub:
-
-![](images/clipboard-2370911352.png)
-
-![](images/clipboard-2395957737.png)
+Y con un simple click en *Push* estos quedarán actualizados en GitHub.
 
 ## Análisis en R.
 
@@ -269,9 +256,6 @@ sum(is.na(assay(summarized_experiment)))
 assay(summarized_experiment)[is.na(assay(summarized_experiment))] <- 0
 assay(summarized_experiment) <- round(assay(summarized_experiment))
 DESDataset <- DESeqDataSet(summarized_experiment, design = ~ Group)
-#normalization <- normalizeBetweenArrays(assay(summarized_experiment))
-#assay(summarized_experiment) <- normalization
-
 ```
 
 Tras ello, aplicamos la normalización:
@@ -434,3 +418,7 @@ Así mismo, el estudio de componentes principales nos enseña que, pese a que el
 También se ha realizado un filtrado de los metabolitos para poder visualizar más cómodamente los heatmaps. Estos parecen indicar funciones similares entre metabólitos. Así mismo, las zonas de metabolitos sin correlación podría estar relacionada con el estudio original y la importancia de las individualidades metabólicas en las intervenciones de cirugía bariátrica.
 
 Así pues, sería necesario seguir realizando más pruebas para llegar a las mismas conclusiones que el estudio principal, como podría ser modelos de regresión, análisis longitudinales y una identificación de las rutas metabólicas de los clústeres principales.
+
+# Repositorio de GitHub.
+
+<https://github.com/guachinwey/PCA1_Omics>
