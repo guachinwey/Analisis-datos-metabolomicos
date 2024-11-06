@@ -5,3 +5,238 @@ date: "2024-11-05"
 output: html_document
 ---
 
+Descarga de datos:
+
+Escogemos el dataset llamado 2018-MetabotypingPaper.
+
+Así pues, de este necesitamos los dos archivos siguientes:
+
+-   DataValues_S013.csv: contiene las mediciones.
+
+-   DataInfo_S013.csv: contiene información para saber los metadatos.
+
+```{r}
+# Indicamos los enlaces de descarga del dataset:
+link_DataValues <- "https://raw.githubusercontent.com/nutrimetabolomics/metaboData/main/Datasets/2018-MetabotypingPaper/DataValues_S013.csv"
+link_DataInfo <- "https://raw.githubusercontent.com/nutrimetabolomics/metaboData/main/Datasets/2018-MetabotypingPaper/DataInfo_S013.csv"
+```
+
+```{r}
+# Ponemos nombre a los archivos:
+DataValues <- "DataValues_S013.csv"
+DataInfo <- "DataInfo_S013.csv"
+```
+
+```{r}
+# Procedemos a la descarga:
+download.file(link_DataValues, destfile = DataValues)
+download.file(link_DataInfo, destfile = DataInfo)
+```
+
+```{r}
+# Finalmente, cargamos nuestros archivos:
+data_values <- read.csv(DataValues, row.names = 1)
+data_info <- read.csv(DataInfo, row.names = 1)
+```
+
+Tras revisar los archivos, vemos que en primer lugar debemos transponer data_values:
+
+```{r}
+data_values <- t(data_values)
+```
+
+Además, observamos, gracias a data_info, que los metadatos son las primeras nueve columnas de data_values. Vamos a separarlos para que se identifiquen como metadatos:
+
+```{r}
+metadata <- data_values[1:9,]
+metadata <- t(metadata)
+metadata <- as.data.frame(metadata)
+assay_data <- data_values[-c(1:9), ]
+```
+
+Ponemos el identificativo (sujeto) como identificativo de fila en metadata y a las columnas de assay_data:
+
+```{r}
+rownames(metadata) <- metadata$SUBJECTS
+colnames(assay_data) <- metadata$SUBJECTS
+```
+
+Verificamos las dimensiones:
+
+```{r}
+print(dim(assay_data))
+print(length(metadata$SUBJECTS))
+```
+
+Convertimos a numéricas las columnas de metadatos correspondientes:
+
+```{r}
+metadata$SUBJECTS <- as.numeric(metadata$SUBJECTS)
+metadata$AGE <- as.numeric(metadata$AGE)
+metadata$Group <- as.numeric(metadata$Group)
+metadata$MEDDM_T0 <- as.numeric(metadata$MEDDM_T0)
+metadata$MEDCOL_T0 <- as.numeric(metadata$MEDCOL_T0)
+metadata$MEDINF_T0 <- as.numeric(metadata$MEDINF_T0)
+metadata$MEDHTA_T0 <- as.numeric(metadata$MEDHTA_T0)
+str(metadata)
+```
+
+Forzamos los metadatos a ser reconocidos como tal:
+
+```{r}
+colData <- DataFrame(Subjects = metadata$SUBJECTS,
+                     Surgery = metadata$SURGERY,
+                     Age = metadata$AGE, 
+                     Gender = metadata$GENDER,
+                     Group = metadata$Group,
+                     MEDMM_T0 = metadata$MEDDM_T0, 
+                     MEDCOL_T0 = metadata$MEDCOL_T0, 
+                     MEDINF_T0 = metadata$MEDINF_T0, 
+                     MEDHTA_T0 = metadata$MEDHTA_T0)
+```
+
+En assay_data, vemos que se están almacenando los datos como carácteres, convertimos también a numéricos y transformamos los NA por 0:
+
+```{r}
+assay_data[is.na(assay_data)] <- 0
+assay_data <- as.matrix (assay_data)
+assay_data <- matrix(as.numeric(assay_data), nrow = 686, ncol = 39)
+str(assay_data)
+rownames(assay_data) <- rownames(data_values)[-c(1:9)]
+colnames(assay_data) <- metadata$SUBJECTS
+```
+
+```{r}
+print(dim(assay_data))
+print(length(metadata$SURGERY))
+```
+
+Ahora tenemos que cargar la libreria SummarizedExperiment para poder generar el objeto homónimo:
+
+```{r}
+library(SummarizedExperiment)
+```
+
+Creamos el objeto SummarizedExperiment. Para ello, usaremos data_values como datos y colData como metadatos:
+
+```{r}
+summarized_experiment <- SummarizedExperiment(assays = list(counts = assay_data), colData = colData)
+```
+
+```{r}
+print(dim(assay_data))
+print(dim(colData))
+
+print(all(rownames(colData) == colnames(assay_data)))
+
+# Si hay un desajuste, imprime los nombres para identificar el problema
+print(rownames(colData))
+print(colnames(assay_data))
+
+print(head(assay_data))
+
+# Verifica el objeto creado
+print(summarized_experiment)
+```
+
+```{r}
+summarized_experiment
+```
+
+```{r}
+head(assay(summarized_experiment))
+```
+
+```{r}
+colData(summarized_experiment)
+```
+
+```{r}
+dim(assay(summarized_experiment))
+dim(colData(summarized_experiment))
+```
+
+```{r}
+rownames(assay(summarized_experiment))
+colnames(assay(summarized_experiment))
+```
+
+```{r}
+head(colData(summarized_experiment))
+```
+
+```{r}
+summary(summarized_experiment)
+print(colData)
+```
+
+EXPLORACION:
+
+Dimensiones:
+
+```{r}
+dim(summarized_experiment)
+dim(assay(summarized_experiment))
+dim(colData(summarized_experiment))
+```
+
+Metadatos:
+
+```{r}
+head(colData(summarized_experiment))
+```
+
+DISTRIBUCION VARIABLES
+
+```{r}
+hist(colData(summarized_experiment)$Age, main = "Distribución de la edad", xlab = "Edad")
+```
+
+```{r}
+#Distribución por sexos, por cirugia...
+```
+
+MATRIZ DE ASSAY:
+
+```{r}
+summary(assay(summarized_experiment))
+```
+
+Desviación estándar:
+
+```{r}
+apply(assay(summarized_experiment), 1, sd)
+```
+
+HEATMAP:
+
+```{r}
+library(pheatmap)
+
+pheatmap(assay(summarized_experiment), cluster_rows = TRUE, cluster_cols = TRUE, 
+         show_rownames = FALSE, show_colnames = FALSE, main = "Heatmap de todas las muestras")
+```
+
+```{r}
+cor_matrix <- cor(t(assay(summarized_experiment)))
+pheatmap(cor_matrix, main = "Correlación entre muestras", display_numbers = TRUE)
+```
+
+PCA
+
+```{r}
+#Extraemos data.frame:
+data_for_pcs <- assay(summarized_experiment)
+pcs <- prcomp(data_for_pcs)
+names(pcs)
+```
+
+```{r}
+barplot(pcs$sdev)
+```
+
+```{r}
+plot(pcs$rotation[, 1], pcs$rotation[, 2],
+     main = "Representación de los dos primeros componentes principales")
+text(pcs$rotation[, 1], pcs$rotation[, 2], metadata$GENDER, cex = 0.8, pps = 3)
+```
