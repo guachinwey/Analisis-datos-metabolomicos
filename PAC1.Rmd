@@ -7,7 +7,7 @@ output: html_document
 
 Descarga de datos:
 
-Escogemos el dataset llamado 2018-MetabotypingPaper.
+Escogemos el dataset llamado 2018-MetabotypingPaper. jjj
 
 Así pues, de este necesitamos los dos archivos siguientes:
 
