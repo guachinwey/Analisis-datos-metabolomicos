@@ -5,15 +5,89 @@ date: "2024-11-05"
 output: html_document
 ---
 
-Descarga de datos:
+# Abstract.
 
-Escogemos el dataset llamado 2018-MetabotypingPaper. jjj
+El presente trabajo tiene como objetivo realizar un acercamiento al análisis de datos ómicos utilizando el dataset *2018-MetabotypingPaper*, así como RStudio y GitHub.
 
-Así pues, de este necesitamos los dos archivos siguientes:
+En primer lugar, se genera un repositorio en GitHub conectado al proyecto en R y se crea el objeto *SummarizedExperiment* a partir del dataset.
 
--   DataValues_S013.csv: contiene las mediciones.
+Tras ello, se realiza una exploración del dataset que incluye normalización, análisis de componentes principales, filtrado de metabolitos y visualización de heatmaps.
 
--   DataInfo_S013.csv: contiene información para saber los metadatos.
+Estos resultados parecen indicar patrones de correlación entre metabolitos y factores individuales. No obstante, son necesarios más estudios para poder concluir esto, pudiendo ser estos modelos predictivos, análisis longitudinales y análisis de rutas metabólicas.
+
+# Objetivos del estudio.
+
+Los objetivos del presente trabajo son ejecutar un proceso simplificado de análisis de datos ómicos, especificamente:
+
+-   Generar un proyecto en R y conectarlo a un repositorio en GitHub.
+
+-   Crear un objeto Summarized Experiment a través del dataset escogido.
+
+-   Realizar una exploración del dataset para tener una visión general de este.
+
+# Materiales y métodos.
+
+## Materiales utilizados.
+
+Los materiales utilizados son el dataset *2018-MetabotypingPaper* (extraído del repositorio de GitHub metaboData, al cual puede accederse a través de <https://github.com/nutrimetabolomics/metaboData/tree/main/Datasets/2018-MetabotypingPaper>).
+
+Este dataset fue utilizado en el paper "*Metabotypes of response to bariatric surgery independent of the magnitude of weight loss*" y está conformado por:
+
+-   DataInfo_S013.csv: Este archivo corresponde a los metadatos.
+
+-   DataValues_S013.csv: Valores clínicos y metabolómicos de 39 pacientes en 5 puntos temporales.
+
+-   AAInformation_S006.csv: Información adicional de los metabolitos de "DataValues_S013.csv".
+
+Así mismo, el estudio se realizará utilizando RStudio, con la versión de R 4.4.1. Los paquetes utilizados se exploran en el apartado **Métodos**.
+
+Finalmente, para poder cargar todos nuestros documentos, será necesario utilizar un repositorio de GitHub.
+
+## Métodos.
+
+### Creación del proyecto en R y del repositorio en GitHub.
+
+En primer lugar, crearemos el repositorio en GitHub. Para ello, con la sesión iniciada, nos dirigiremos a *Repositories / New*:
+
+![](images/clipboard-3636223962.png)
+
+En la página de creación del Repositorio, tendremos que indicar el nombre, una breve descripción y, en esta ocasión, lo haremos de dominio público. Tras ello, clicaremos en *Create repository:*
+
+![](images/clipboard-3557996507.png)
+
+![](images/clipboard-2127165342.png)
+
+Esto nos creará el repositorio, el enlace del cual deberemos copiar en RStudio:
+
+![](images/clipboard-3940631010.png)
+
+En RStudio, nos dirigimos a *File / New Project / Version Control / Git*. En la pantalla final, deberemos copiar la URL del repositorio creado, así como indicar la dirección local del proyecto en nuestro ordenador:
+
+![](images/clipboard-4094692892.png)
+
+Finalmente, para sincronizar RStudio con GitHub, deberemos ir haciendo *Commit* en las actualizaciones que generemos:
+
+![](images/clipboard-30791053.png)
+
+![](images/clipboard-2508258357.png)
+
+Y con un simple click en *Push* estos quedarán actualizados en GitHub:
+
+![](images/clipboard-2370911352.png)
+
+![](images/clipboard-2395957737.png)
+
+## Análisis en R.
+
+Para generar el objeto *Summarized experiment* y realizar su posterior análisis, se utilizarán una serie de repositorios y librerias de R, a destacar el repositorio *Bioconductor* y su libreria *Summarized Experiment*, además de otras que se verán en el apartado **Resultados**.
+
+Tras obtener el objeto, se hará un primer análisis exploratorio de datos, continuando por normalizar el dataset, así como realizar el cálculo de PCA. También se harán estudios de la distribución de las variables y heatmaps para revisar la relación entre los metabolitos, estos últimos con los datos originales y con un posterior filtrado.
+
+# Resultados.
+
+## Descarga de datos.
+
+Para la descarga de datos escogeremos los archivos DataValues_S013.csv y DataInfo_S013.csv:
 
 ```{r}
 # Indicamos los enlaces de descarga del dataset:
@@ -39,13 +113,15 @@ data_values <- read.csv(DataValues, row.names = 1)
 data_info <- read.csv(DataInfo, row.names = 1)
 ```
 
-Tras revisar los archivos, vemos que en primer lugar debemos transponer data_values:
+## Creación del objeto *Summarized Experiment*.
+
+Tras revisar los archivos, vemos que en primer lugar debemos transponer data_values, ya que es importante que en el *assay* tengamos las muestras en columnas y los metabólitos en filas:
 
 ```{r}
 data_values <- t(data_values)
 ```
 
-Además, observamos, gracias a data_info, que los metadatos son las primeras nueve columnas de data_values. Vamos a separarlos para que se identifiquen como metadatos:
+Además, observamos, gracias a data_info, que los metadatos son las primeras nueve columnas de data_values (*Subjects, Surgery, Age, Gender, Group*, y 4 mediciones de metabólitos iniciales que tienen valores categóricos). Vamos a separarlos para que se identifiquen como metadatos:
 
 ```{r}
 metadata <- data_values[1:9,]
@@ -54,26 +130,18 @@ metadata <- as.data.frame(metadata)
 assay_data <- data_values[-c(1:9), ]
 ```
 
-Ponemos el identificativo (sujeto) como identificativo de fila en metadata y a las columnas de assay_data:
+Ponemos los sujetos como identificativo de fila en metadata y de las columnas de assay_data:
 
 ```{r}
 rownames(metadata) <- metadata$SUBJECTS
 colnames(assay_data) <- metadata$SUBJECTS
 ```
 
-Verificamos las dimensiones:
-
-```{r}
-print(dim(assay_data))
-print(length(metadata$SUBJECTS))
-```
-
-Convertimos a numéricas las columnas de metadatos correspondientes:
+Convertimos a numéricas las columnas de metadatos correspondientes para facilitar el posterior análisis:
 
 ```{r}
 metadata$SUBJECTS <- as.numeric(metadata$SUBJECTS)
 metadata$AGE <- as.numeric(metadata$AGE)
-metadata$Group <- as.numeric(metadata$Group)
 metadata$MEDDM_T0 <- as.numeric(metadata$MEDDM_T0)
 metadata$MEDCOL_T0 <- as.numeric(metadata$MEDCOL_T0)
 metadata$MEDINF_T0 <- as.numeric(metadata$MEDINF_T0)
@@ -96,33 +164,44 @@ colData <- DataFrame(Subjects = metadata$SUBJECTS,
                      MEDHTA_T0 = metadata$MEDHTA_T0)
 ```
 
-En assay_data, vemos que se están almacenando los datos como carácteres, convertimos también a numéricos y transformamos los NA por 0:
+En *assay_data*, detectamos que se están almacenando los datos como carácteres, convertimos también a numéricos y transformamos los NA por 0:
 
 ```{r}
-assay_data[is.na(assay_data)] <- 0
+# Convertimos los NA a 0:
+assay_data[is.na(assay_data)] <- 0 
+
+# Transformamos assay_data en una matriz de 39 columnas y 686 filas:
 assay_data <- as.matrix (assay_data)
 assay_data <- matrix(as.numeric(assay_data), nrow = 686, ncol = 39)
-str(assay_data)
+
+# Indicamos que los identificativos de las filas serán los metabólitos y los de las columnas los sujetos:
 rownames(assay_data) <- rownames(data_values)[-c(1:9)]
 colnames(assay_data) <- metadata$SUBJECTS
 ```
 
+Hacemos un análisis inicial para comprobar que la generación del objeto *summarized_object* será correcta. Para ello, comprobamos que las dimensiones de *assay_data* y *colDat*a son compatibles.
+
+También comprobamos que los nombres de las filas de *colData* sean los mismos que los nombres de las columnas de *assay_data*, lo que servirá para identificar de cada muestra sus metadatos.
+
 ```{r}
 print(dim(assay_data))
-print(length(metadata$SURGERY))
+print(dim(colData))
+print(all(rownames(colData) == colnames(assay_data)))
 ```
 
-Ahora tenemos que cargar la libreria SummarizedExperiment para poder generar el objeto homónimo:
+Ahora tenemos que cargar la libreria *SummarizedExperiment* para poder generar el objeto homónimo:
 
 ```{r}
 library(SummarizedExperiment)
 ```
 
-Creamos el objeto SummarizedExperiment. Para ello, usaremos data_values como datos y colData como metadatos:
+Creamos el objeto SummarizedExperiment. Para ello, usaremos *assay_data* como datos y *colData* como metadatos:
 
 ```{r}
 summarized_experiment <- SummarizedExperiment(assays = list(counts = assay_data), colData = colData)
 ```
+
+## Guardado del objeto *Summarized experiment.*
 
 Guardamos el objeto summarized_experiment como archivo .RDA:
 
@@ -130,106 +209,89 @@ Guardamos el objeto summarized_experiment como archivo .RDA:
 save(summarized_experiment, file = "summarized_experiment.RDA")
 ```
 
-```{r}
-print(dim(assay_data))
-print(dim(colData))
+## Análisis del dataset.
 
-print(all(rownames(colData) == colnames(assay_data)))
-
-# Si hay un desajuste, imprime los nombres para identificar el problema
-print(rownames(colData))
-print(colnames(assay_data))
-
-print(head(assay_data))
-
-# Verifica el objeto creado
-print(summarized_experiment)
-```
+En primer lugar, revisamos el objeto *summarized_experiment*. Con esto, podemos confirmar las dimensiones (686 metabolitos y 39 muestras), que solo tiene un assay, en formato de concentración de metabolitos y que tiene metadatos en *colData* sobre cada muestra, formado por 9 variables.
 
 ```{r}
 summarized_experiment
 ```
 
-```{r}
-head(assay(summarized_experiment))
-```
+Si revisamos los metadatos de *colData*, podemos confirmar las 9 variables por muestra:
 
 ```{r}
 colData(summarized_experiment)
 ```
 
-```{r}
-dim(assay(summarized_experiment))
-dim(colData(summarized_experiment))
-```
+Revisando las filas de *assay*, obtenemos un listado de los metabolitos:
 
 ```{r}
-rownames(assay(summarized_experiment))
-colnames(assay(summarized_experiment))
+head(rownames(assay(summarized_experiment)))
 ```
 
-```{r}
-head(colData(summarized_experiment))
-```
+## Resumen inicial del dataset.
 
-```{r}
-summary(summarized_experiment)
-print(colData)
-```
-
-EXPLORACION:
-
-Dimensiones:
-
-```{r}
-dim(summarized_experiment)
-dim(assay(summarized_experiment))
-dim(colData(summarized_experiment))
-```
-
-Metadatos:
-
-```{r}
-head(colData(summarized_experiment))
-```
-
-DISTRIBUCION VARIABLES
-
-```{r}
-hist(colData(summarized_experiment)$Age, main = "Distribución de la edad", xlab = "Edad")
-```
-
-```{r}
-#Distribución por sexos, por cirugia...
-```
-
-MATRIZ DE ASSAY:
+Hacemos un primer resumen de los datos:
 
 ```{r}
 summary(assay(summarized_experiment))
 ```
 
-Desviación estándar:
+Vamos a reforzar estos resultados con un boxplot para poder revisar mejor los estadísticos:
 
 ```{r}
-apply(assay(summarized_experiment), 1, sd)
+boxplot(assay(summarized_experiment))
 ```
 
-HEATMAP:
+Con estos resultados, podemos observar lo siguiente:
+
+-   Vemos puntos mínimos en negativo, como -99 (muestras 1, 4, 5...) y -9, pudiendo ser valores faltantes o errores en la medición, dando lugar a datos inválidos.
+
+-   Se observan valores máximos muy altos (1560 en la muestra 18) en comparación con el resto, por lo que sería interesante estudiar la presencia de outliers que pudieran afectar el análisis.
+
+-   Vemos las medianas y los valores medios bastante distintos, por lo que los datos podrían ser asimétricos.
+
+-   El rango de los datos es muy amplio, como se ha observado con los puntos mínimos y los valores máximos.
+
+Habiendo observado este primer resumen de los datos, vamos a eliminar los valores negativos:
 
 ```{r}
-library(pheatmap)
-
-pheatmap(assay(summarized_experiment), cluster_rows = TRUE, cluster_cols = TRUE, 
-         show_rownames = FALSE, show_colnames = FALSE, main = "Heatmap de todas las muestras")
+assay(summarized_experiment)[assay(summarized_experiment) < 0] <- NA
 ```
+
+## Normalización de los datos.
+
+A continuación, debido a que vemos mucha asimetría en los datos, vamos a proceder a realizar la normalización de estos. Para ello, creamos un objeto *DESeqDataSet*, utilizando los grupos como condición, siguiendo la naturaleza del estudio inicial:
 
 ```{r}
-cor_matrix <- cor(t(assay(summarized_experiment)))
-pheatmap(cor_matrix, main = "Correlación entre muestras", display_numbers = TRUE)
+library(DESeq2)
+sum(is.na(assay(summarized_experiment)))
+assay(summarized_experiment)[is.na(assay(summarized_experiment))] <- 0
+assay(summarized_experiment) <- round(assay(summarized_experiment))
+DESDataset <- DESeqDataSet(summarized_experiment, design = ~ Group)
+#normalization <- normalizeBetweenArrays(assay(summarized_experiment))
+#assay(summarized_experiment) <- normalization
+
 ```
 
-PCA
+Tras ello, aplicamos la normalización:
+
+```{r}
+DES_vst <- rlog(DESDataset)
+assay(summarized_experiment) <- assay(DES_vst)
+```
+
+Revisamos la normalización:
+
+```{r}
+boxplot(assay(summarized_experiment))
+```
+
+Obtenemos datos más homogéneos, se han eliminado los posibles outliers, disminuido el rango de muestra y, por tanto, la dispersión de los datos y la variabilidad.
+
+## Estudio de componentes principales.
+
+Ahora, vamos a revisar los componentes principales:
 
 ```{r}
 #Extraemos data.frame:
@@ -242,8 +304,133 @@ names(pcs)
 barplot(pcs$sdev)
 ```
 
+Observamos que la mayoría de la variabilidad la explica el primer componente principal.
+
 ```{r}
 plot(pcs$rotation[, 1], pcs$rotation[, 2],
      main = "Representación de los dos primeros componentes principales")
-text(pcs$rotation[, 1], pcs$rotation[, 2], metadata$GENDER, cex = 0.8, pps = 3)
+text(pcs$rotation[, 1], pcs$rotation[, 2], metadata$Group, cex = 0.8, pps = 3)
 ```
+
+Se detecta una agrupación en la esquina inferior izquierda de variables, lo que podría indicar correlación entre ellas.
+
+No obstante, el resto de puntos se encuentran dispersos, por lo que no parece que haya correlaciones muy altas entre las variables.
+
+```{r}
+plot(pcs$x[,1], pcs$x[,2])
+```
+
+Hay una tendencia en la dispersión a la diagonal, lo que parece indicar una variabilidad en los dos componentes principales.
+
+## Estudio de la distribución de las características.
+
+Vamos a realizar un breve estudio para revisar la distribución de las variables de los metadatos, empezando por la edad:
+
+```{r}
+hist(colData(summarized_experiment)$Age, main = "Distribución de la edad", xlab = "Edad", ylab = "Frecuencia de muestras")
+```
+
+Observamos que la media de la edad de los sujetos está entorno a los 40 años, yendo esta de los 15 a los 60 años.
+
+Referente a los grupos, vemos que la mayoría de los participantes corresponden al primer grupo:
+
+```{r}
+library(ggplot2)
+ggplot(as.data.frame(colData(summarized_experiment)), aes(x = Group)) +
+  geom_bar() + 
+  xlab("Grupos") +
+  ylab("Número de muestras") +
+  ggtitle("Número de muestras por grupo")
+```
+
+Finalmente, vemos que referente al tipo de cirugía, la mayoría de los pacientes se sometieron a un by pass:
+
+```{r}
+ggplot(as.data.frame(colData(summarized_experiment)), aes(x = Surgery)) +
+  geom_bar() + 
+  xlab("Tipo de cirugía") +
+  ylab("Número de muestras") +
+  ggtitle("Número de muestras por tipo de cirugía")
+```
+
+## Generación del *heatmap* y filtrado de metadatos.
+
+En primer lugar, vamos a generar un *heatmap* de todas las muestras:
+
+```{r}
+library(pheatmap)
+
+pheatmap(assay(summarized_experiment), cluster_rows = TRUE, cluster_cols = TRUE, 
+         show_rownames = FALSE, show_colnames = FALSE, main = "Heatmap de todas las muestras")
+```
+
+Y también realizamos un *heatmap* de la correlación entre los metabolitos:
+
+```{r}
+cor_matrix <- cor(assay(summarized_experiment))
+pheatmap(cor_matrix, main = "Correlación entre metabolitos", display_numbers = TRUE)
+```
+
+### Filtrado de metabolitos.
+
+Para poder revisar con más facilidad estos *heatmaps*, vamos a filtrar los metadatos.
+
+En primer lugar, filtraremos los metabolitos que tienen muchos valores NA:
+
+```{r}
+valor_na <- 0.5 * ncol(summarized_experiment)
+na_correctos <- rowSums(is.na(assay(summarized_experiment))) <= valor_na
+```
+
+También descartaremos los metabolitos con baja variabilidad entre las muestras, cogiendo de varianza \< 0.1:
+
+```{r}
+varianza <- apply(assay(summarized_experiment), 1, var, na.rm = TRUE)
+var_correctos <- varianza > 0.1
+```
+
+Filtramos según los resultados anteriores:
+
+```{r}
+metabolitos_filtrados <- na_correctos & var_correctos
+```
+
+```{r}
+summarized_experiment_filtered <- summarized_experiment[metabolitos_filtrados, ]
+```
+
+Vamos a revisar el número de metabolitos filtrados:
+
+```{r}
+dim(summarized_experiment_filtered)
+```
+
+Así pues, volveremos a hacer el heatmap con los 513 metabolitos resultantes:
+
+```{r}
+pheatmap(assay(summarized_experiment_filtered), cluster_rows = TRUE, cluster_cols = TRUE, 
+         show_rownames = FALSE, show_colnames = FALSE, main = "Heatmap con metabolitos filtrados")
+```
+
+Con este *heatmap* podemos observar que parece que tanto las muestras como los metabólitos se agrupen por clusteres. Esto podría indica funciones similares en los metabólitos y posibles factores experimentales que las expliquen.
+
+```{r}
+cor_matrix_filtered <- cor(assay(summarized_experiment_filtered))
+pheatmap(cor_matrix_filtered, main = "Correlación entre metabolitos filtrados", display_numbers = TRUE)
+```
+
+Observamos una clara correlación entre los metabolitos de la parte superior izquierda, indicando nuevamente posibilidad de vías metabólicas similares. Esta información podría ampliarse utilizando los clústeres generados.
+
+También observamos todo lo contrario, metabólicos con muy poca correlación, sobretodo en la parte inferior derecha, de color azul.
+
+# Discusión del estudio.
+
+En el estudio original se identifican patrones metabólicos específicos que sirven para predecir los resultados metabólicos postquirúrgicos de los pacientes. Así pues, indican que la salud metabólica individual tiene una gran responsabilidad en las cirugías bariátricas.
+
+En los primeros pasos de nuestro estudio hemos eliminado los valores negativos y posibles *outliers*, así como la normalización de las muestras, consiguiendo mejorar la calidad de estos.
+
+Así mismo, el estudio de componentes principales nos enseña que, pese a que el primer componente explica la mayor variabilidad, no parece que hayan correlaciones altas entre las variables.
+
+También se ha realizado un filtrado de los metabolitos para poder visualizar más cómodamente los heatmaps. Estos parecen indicar funciones similares entre metabólitos. Así mismo, las zonas de metabolitos sin correlación podría estar relacionada con el estudio original y la importancia de las individualidades metabólicas en las intervenciones de cirugía bariátrica.
+
+Así pues, sería necesario seguir realizando más pruebas para llegar a las mismas conclusiones que el estudio principal, como podría ser modelos de regresión, análisis longitudinales y una identificación de las rutas metabólicas de los clústeres principales.
